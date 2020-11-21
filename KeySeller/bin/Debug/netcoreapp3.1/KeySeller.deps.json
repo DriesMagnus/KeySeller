@@ -8,30 +8,19 @@
     ".NETCoreApp,Version=v3.1": {
       "KeySeller/1.0.0": {
         "dependencies": {
-          "Discord.Addons.Interactive": "2.0.0",
+          "Discord.Addons.Interactive": "0.0.0-dev",
           "Discord.Net": "2.2.0",
           "Discord.Net.Commands": "2.2.0",
           "Discord.Net.Core": "2.2.0",
           "Discord.Net.WebSocket": "2.2.0",
-          "Microsoft.Extensions.DependencyInjection": "3.1.6",
-          "MongoDB.Driver": "2.11.0-beta2",
+          "Microsoft.Extensions.DependencyInjection": "5.0.0",
+          "MongoDB.Driver": "2.11.4",
           "Newtonsoft.Json": "12.0.3",
-          "QBitNinja.Client": "1.0.3.52"
+          "QBitNinja.Client": "1.0.3.52",
+          "Microsoft.Office.Interop.Excel": "16.0.0.0"
         },
         "runtime": {
           "KeySeller.dll": {}
-        }
-      },
-      "Discord.Addons.Interactive/2.0.0": {
-        "dependencies": {
-          "Discord.Net.Commands": "2.2.0",
-          "Discord.Net.WebSocket": "2.2.0"
-        },
-        "runtime": {
-          "lib/netstandard2.0/Discord.Addons.Interactive.dll": {
-            "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.0.0.0"
-          }
         }
       },
       "Discord.Net/2.2.0": {
@@ -110,22 +99,22 @@
           }
         }
       },
-      "Microsoft.Extensions.DependencyInjection/3.1.6": {
+      "Microsoft.Extensions.DependencyInjection/5.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.6"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0"
         },
         "runtime": {
-          "lib/netcoreapp3.1/Microsoft.Extensions.DependencyInjection.dll": {
-            "assemblyVersion": "3.1.6.0",
-            "fileVersion": "3.100.620.31605"
+          "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.dll": {
+            "assemblyVersion": "5.0.0.0",
+            "fileVersion": "5.0.20.51904"
           }
         }
       },
-      "Microsoft.Extensions.DependencyInjection.Abstractions/3.1.6": {
+      "Microsoft.Extensions.DependencyInjection.Abstractions/5.0.0": {
         "runtime": {
           "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
-            "assemblyVersion": "3.1.6.0",
-            "fileVersion": "3.100.620.31605"
+            "assemblyVersion": "5.0.0.0",
+            "fileVersion": "5.0.20.51904"
           }
         }
       },
@@ -157,39 +146,39 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "MongoDB.Bson/2.11.0-beta2": {
+      "MongoDB.Bson/2.11.4": {
         "runtime": {
           "lib/netstandard2.0/MongoDB.Bson.dll": {
-            "assemblyVersion": "2.11.0.0",
-            "fileVersion": "2.11.0.0"
+            "assemblyVersion": "2.11.4.0",
+            "fileVersion": "2.11.4.0"
           }
         }
       },
-      "MongoDB.Driver/2.11.0-beta2": {
+      "MongoDB.Driver/2.11.4": {
         "dependencies": {
-          "MongoDB.Bson": "2.11.0-beta2",
-          "MongoDB.Driver.Core": "2.11.0-beta2",
+          "MongoDB.Bson": "2.11.4",
+          "MongoDB.Driver.Core": "2.11.4",
           "MongoDB.Libmongocrypt": "1.0.0"
         },
         "runtime": {
           "lib/netstandard2.0/MongoDB.Driver.dll": {
-            "assemblyVersion": "2.11.0.0",
-            "fileVersion": "2.11.0.0"
+            "assemblyVersion": "2.11.4.0",
+            "fileVersion": "2.11.4.0"
           }
         }
       },
-      "MongoDB.Driver.Core/2.11.0-beta2": {
+      "MongoDB.Driver.Core/2.11.4": {
         "dependencies": {
           "DnsClient": "1.3.1",
-          "MongoDB.Bson": "2.11.0-beta2",
+          "MongoDB.Bson": "2.11.4",
           "MongoDB.Libmongocrypt": "1.0.0",
           "SharpCompress": "0.23.0",
           "System.Buffers": "4.4.0"
         },
         "runtime": {
           "lib/netstandard2.0/MongoDB.Driver.Core.dll": {
-            "assemblyVersion": "2.11.0.0",
-            "fileVersion": "2.11.0.0"
+            "assemblyVersion": "2.11.4.0",
+            "fileVersion": "2.11.4.0"
           }
         },
         "runtimeTargets": {
@@ -950,6 +939,47 @@
           "System.Threading": "4.3.0",
           "System.Xml.ReaderWriter": "4.3.0"
         }
+      },
+      "Discord.Addons.Interactive/0.0.0-dev": {
+        "dependencies": {
+          "Discord.Net.Commands": "2.2.0",
+          "Discord.Net.WebSocket": "2.2.0"
+        },
+        "runtime": {
+          "Discord.Addons.Interactive.dll": {}
+        }
+      },
+      "Microsoft.Office.Interop.Excel/16.0.0.0": {
+        "runtime": {
+          "Microsoft.Office.Interop.Excel.dll": {
+            "assemblyVersion": "16.0.0.0",
+            "fileVersion": "16.0.13328.20130"
+          }
+        }
+      },
+      "office/16.0.0.0": {
+        "runtime": {
+          "office.dll": {
+            "assemblyVersion": "16.0.0.0",
+            "fileVersion": "16.0.13328.20130"
+          }
+        }
+      },
+      "Microsoft.Vbe.Interop/16.0.0.0": {
+        "runtime": {
+          "Microsoft.Vbe.Interop.dll": {
+            "assemblyVersion": "16.0.0.0",
+            "fileVersion": "16.0.11929.20102"
+          }
+        }
+      },
+      "stdole/7.0.3300.0": {
+        "runtime": {
+          "stdole.dll": {
+            "assemblyVersion": "7.0.3300.0",
+            "fileVersion": "7.0.9466.1"
+          }
+        }
       }
     }
   },
@@ -958,13 +988,6 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
-    },
-    "Discord.Addons.Interactive/2.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-j/bkGeDniPuODOOC+3ZpKvLmoG0z1NHSZrVu6bnaUEYd0tMY4TxaIwl36ue7fK9MXrqQc8VcjcDnvM6JX+V6HA==",
-      "path": "discord.addons.interactive/2.0.0",
-      "hashPath": "discord.addons.interactive.2.0.0.nupkg.sha512"
     },
     "Discord.Net/2.2.0": {
       "type": "package",
@@ -1015,19 +1038,19 @@
       "path": "dnsclient/1.3.1",
       "hashPath": "dnsclient.1.3.1.nupkg.sha512"
     },
-    "Microsoft.Extensions.DependencyInjection/3.1.6": {
+    "Microsoft.Extensions.DependencyInjection/5.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-YMJWflBmBc0PbqYvt3m4ueSCgV51JLfqHhyunoVq0rBs9V4sVQw5JsPTB17bIrlHFJs2pt2olgfavOOvuGwoRg==",
-      "path": "microsoft.extensions.dependencyinjection/3.1.6",
-      "hashPath": "microsoft.extensions.dependencyinjection.3.1.6.nupkg.sha512"
+      "sha512": "sha512-Rc2kb/p3Ze6cP6rhFC3PJRdWGbLvSHZc0ev7YlyeU6FmHciDMLrhoVoTUEzKPhN5ZjFgKF1Cf5fOz8mCMIkvpA==",
+      "path": "microsoft.extensions.dependencyinjection/5.0.0",
+      "hashPath": "microsoft.extensions.dependencyinjection.5.0.0.nupkg.sha512"
     },
-    "Microsoft.Extensions.DependencyInjection.Abstractions/3.1.6": {
+    "Microsoft.Extensions.DependencyInjection.Abstractions/5.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-JVlypPjlPqOEyAhET6pA7TqrK+Ya8TrYe2vvqsp62TYKS87oNuReoS7XpDFW0rrOsQo66G1yYf3K0E+lJHFHuw==",
-      "path": "microsoft.extensions.dependencyinjection.abstractions/3.1.6",
-      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.3.1.6.nupkg.sha512"
+      "sha512": "sha512-ORj7Zh81gC69TyvmcUm9tSzytcy8AVousi+IVRAI8nLieQjOFryRusSFh7+aLk16FN9pQNqJAiMd7BTKINK0kA==",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/5.0.0",
+      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.5.0.0.nupkg.sha512"
     },
     "Microsoft.Extensions.Logging.Abstractions/1.0.0": {
       "type": "package",
@@ -1057,26 +1080,26 @@
       "path": "microsoft.win32.primitives/4.3.0",
       "hashPath": "microsoft.win32.primitives.4.3.0.nupkg.sha512"
     },
-    "MongoDB.Bson/2.11.0-beta2": {
+    "MongoDB.Bson/2.11.4": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-HiOXQWnIPNdrCA8ZOA/9H02bUeMVgPjfKCZsaOQcsRb5vylAWRId3RIVnaRTANCaRH5uBMYbfUTEbrsb6l7lnA==",
-      "path": "mongodb.bson/2.11.0-beta2",
-      "hashPath": "mongodb.bson.2.11.0-beta2.nupkg.sha512"
+      "sha512": "sha512-4i/c7Qq4ov2r1Z9yMigcQNLVukJDuMJclKiHLGPx6fpV0c8/A/WMsRDQJv3NeEhkKbFXamxFmRPKv1ztw0u3cA==",
+      "path": "mongodb.bson/2.11.4",
+      "hashPath": "mongodb.bson.2.11.4.nupkg.sha512"
     },
-    "MongoDB.Driver/2.11.0-beta2": {
+    "MongoDB.Driver/2.11.4": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-PLDubYcoUQAgkpiOA8S/iLcN8gYqwo3SGp5M3475hUyYXeEu3/uxqpOkl5L5bitgd+EoPqCtkBCP0MbsheIqWg==",
-      "path": "mongodb.driver/2.11.0-beta2",
-      "hashPath": "mongodb.driver.2.11.0-beta2.nupkg.sha512"
+      "sha512": "sha512-cVBBI38GMbVAPdz+JxeE9Pbv6YVZ/idswlgRA4vJZ/+uqGb6FoDeO8z1d0xp18Yo2Jdl2SHC8MGyaAjVxbnlIg==",
+      "path": "mongodb.driver/2.11.4",
+      "hashPath": "mongodb.driver.2.11.4.nupkg.sha512"
     },
-    "MongoDB.Driver.Core/2.11.0-beta2": {
+    "MongoDB.Driver.Core/2.11.4": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-q4PoNU8jPkSZcfOlE3aqBUK6C6HBXDOxcg+osWdoXgKqoYeinsAlaX6KCiiQtbaISB2WwElMej9hzGFHbmQu1g==",
-      "path": "mongodb.driver.core/2.11.0-beta2",
-      "hashPath": "mongodb.driver.core.2.11.0-beta2.nupkg.sha512"
+      "sha512": "sha512-yyd9ufa3h1zlVooDJKRg38x5rRStqElKARLwZxsdlvvyBNx4zB5caUYq41ydF42Je1OJpraNpx3ZJEjdlX0LBg==",
+      "path": "mongodb.driver.core/2.11.4",
+      "hashPath": "mongodb.driver.core.2.11.4.nupkg.sha512"
     },
     "MongoDB.Libmongocrypt/1.0.0": {
       "type": "package",
@@ -1637,6 +1660,31 @@
       "sha512": "sha512-5zJ0XDxAIg8iy+t4aMnQAu0MqVbqyvfoUVl1yDV61xdo3Vth45oA2FoY4pPkxYAH5f8ixpmTqXeEIya95x0aCQ==",
       "path": "system.xml.xdocument/4.3.0",
       "hashPath": "system.xml.xdocument.4.3.0.nupkg.sha512"
+    },
+    "Discord.Addons.Interactive/0.0.0-dev": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Office.Interop.Excel/16.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "office/16.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Vbe.Interop/16.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "stdole/7.0.3300.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
     }
   }
 }

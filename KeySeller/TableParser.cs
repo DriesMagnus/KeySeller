@@ -47,7 +47,7 @@ namespace KeySeller
         public static string ToStringTable(this string[,] arrValues)
         {
             int[] maxColumnsWidth = GetMaxColumnsWidth(arrValues);
-            var headerSpliter = new string('-', maxColumnsWidth.Sum(i => i + 3) - 1);
+            var headerSpliter = new string('─', maxColumnsWidth.Sum(i => i + 3) - 1);
 
             var sb = new StringBuilder();
             for (int rowIndex = 0; rowIndex < arrValues.GetLength(0); rowIndex++)
@@ -57,18 +57,18 @@ namespace KeySeller
                     // Print cell
                     string cell = arrValues[rowIndex, colIndex];
                     cell = cell.PadRight(maxColumnsWidth[colIndex]);
-                    sb.Append(" | ");
+                    sb.Append(" │ ");
                     sb.Append(cell);
                 }
 
                 // Print end of line
-                sb.Append(" | ");
+                sb.Append(" │ ");
                 sb.AppendLine();
 
                 // Print splitter
                 if (rowIndex == 0)
                 {
-                    sb.AppendFormat(" |{0}| ", headerSpliter);
+                    sb.AppendFormat(" │{0}│ ", headerSpliter);
                     sb.AppendLine();
                 }
             }

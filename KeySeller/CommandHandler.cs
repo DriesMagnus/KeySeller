@@ -54,9 +54,9 @@ namespace KeySeller
 
             if (msg.Content.ToLower().Contains(prefix + "help"))
             {
-                if (_service.Commands.Count(x => msg.Content.ToLower().Contains(x.Name)) > 0)
+                if (_service.Commands.Count(x => msg.Content.ToLower().Insert(msg.Content.Length - 1, "  ").Substring(6).Equals(x.Name.ToLower())) > 0)
                 {
-                    var cmd = _service.Commands.First(x => msg.Content.ToLower().Contains(x.Name));
+                    var cmd = _service.Commands.First(x => msg.Content.ToLower().Substring(6).Equals(x.Name.ToLower()));
                     var embedBuilder = new EmbedBuilder
                     {
                         Color = _discordColor.LightBlue,

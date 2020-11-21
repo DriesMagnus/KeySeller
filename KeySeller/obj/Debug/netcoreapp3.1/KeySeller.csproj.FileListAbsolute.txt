@@ -98,3 +98,8 @@ D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\obj\De
 D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\obj\Debug\netcoreapp3.1\KeySeller.dll
 D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\obj\Debug\netcoreapp3.1\KeySeller.pdb
 D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\obj\Debug\netcoreapp3.1\KeySeller.genruntimeconfig.cache
+D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\bin\Debug\netcoreapp3.1\Microsoft.Office.Interop.Excel.dll
+D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\bin\Debug\netcoreapp3.1\office.dll
+D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\bin\Debug\netcoreapp3.1\Microsoft.Vbe.Interop.dll
+D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\bin\Debug\netcoreapp3.1\stdole.dll
+D:\Desktop\Coderen\Programmeren\Projects\Discord Bots\KeySeller\KeySeller\bin\Debug\netcoreapp3.1\Discord.Addons.Interactive.pdb
