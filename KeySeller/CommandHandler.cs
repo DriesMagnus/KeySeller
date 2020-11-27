@@ -16,11 +16,11 @@ namespace KeySeller
 {
     public class CommandHandler
     {
-        private DiscordSocketClient _client;
+        private readonly DiscordSocketClient _client;
 
-        private CommandService _service;
+        private readonly CommandService _service;
 
-        private IServiceProvider _services;
+        private readonly IServiceProvider _services;
 
         private readonly DiscordColor _discordColor = new DiscordColor();
 
@@ -42,8 +42,7 @@ namespace KeySeller
 
         private async Task HandleCommandAsync(SocketMessage s)
         {
-            var msg = s as SocketUserMessage;
-            if (msg == null) return;
+            if (!(s is SocketUserMessage msg)) return;
 
             var context = new SocketCommandContext(_client, msg);
 
@@ -54,83 +53,65 @@ namespace KeySeller
 
             if (msg.Content.ToLower().Contains(prefix + "help"))
             {
-                if (_service.Commands.Count(x => msg.Content.ToLower().Insert(msg.Content.Length - 1, "  ").Substring(6).Equals(x.Name.ToLower())) > 0)
+                if (_service.Commands.Count(x => msg.Content.ToLower().Contains(x.Name.ToLower())) > 0)
                 {
-                    var cmd = _service.Commands.First(x => msg.Content.ToLower().Substring(6).Equals(x.Name.ToLower()));
-                    var embedBuilder = new EmbedBuilder
-                    {
-                        Color = _discordColor.LightBlue,
-                        Author = new EmbedAuthorBuilder
-                        {
-                            Name = cmd.Name.First().ToString().ToUpper() + cmd.Name.Substring(1),
-                            IconUrl =
-                                "https://cdn.discordapp.com/avatars/736541614440448020/dd7b0581dcff206877ae4632c911ab05.png?size=1024"
-                        }
-                    };
+                    var cmd = _service.Commands.First(x => msg.Content.ToLower()[6..].Equals(x.Name.ToLower()));
 
-                    var description = "";
-
-                    if (cmd.Summary != null)
+                    var isExecutable = true;
+                    foreach (var precon in cmd.Preconditions)
                     {
-                        description += $"`{cmd.Name}`: {cmd.Summary}\n\n";
-                    }
-                    else
-                    {
-                        description += $"`{cmd.Name}`: No description provided.\n\n";
+                        var result = await precon
+                            .CheckPermissionsAsync(context, cmd, _services);
+                        if (result.Error.HasValue) isExecutable = false;
                     }
 
-                    var syntax = cmd.Parameters.Aggregate($"`{cmd.Name}", (current, p) => current + $" [{p.Name}]") + "`\n";
-                    description += "**Arguments:**\n" + syntax;
-                    foreach (var parameter in cmd.Parameters)
+                    if (isExecutable)
                     {
-                        if (parameter.Summary != null)
+                        var embedBuilder = new EmbedBuilder
                         {
-                            description += $"`{parameter.Name} ({parameter.Type.Name})`: {parameter.Summary}\n";
+                            Color = _discordColor.LightBlue,
+                            Author = new EmbedAuthorBuilder
+                            {
+                                Name = cmd.Name.First().ToString().ToUpper() + cmd.Name[1..],
+                                IconUrl =
+                                    "https://cdn.discordapp.com/avatars/736541614440448020/dd7b0581dcff206877ae4632c911ab05.png?size=1024"
+                            }
+                        };
+
+                        var description = "";
+
+                        if (cmd.Summary != null)
+                        {
+                            description += $"`{cmd.Name}`: {cmd.Summary}\n\n";
                         }
                         else
                         {
-                            description += $"`{parameter.Name} ({parameter.Type.Name})`: No description provided.\n";
+                            description += $"`{cmd.Name}`: No description provided.\n\n";
                         }
+
+                        if (cmd.Parameters.Count > 0)
+                        {
+                            var syntax = cmd.Parameters.Aggregate($"`{cmd.Name}", (current, p) => current + $" [{p.Name}]") + "`\n";
+                            description += "**Arguments:**\n" + syntax;
+                            foreach (var parameter in cmd.Parameters)
+                            {
+                                if (parameter.Summary != null)
+                                {
+                                    description += $"`{parameter.Name} ({parameter.Type.Name})`: {parameter.Summary}\n";
+                                }
+                                else
+                                {
+                                    description += $"`{parameter.Name} ({parameter.Type.Name})`: No description provided.\n";
+                                }
+                            }
+                        }
+
+                        embedBuilder.WithDescription(description);
+                        await context.Channel.SendMessageAsync(embed: embedBuilder.Build());
                     }
-
-                    embedBuilder.WithDescription(description);
-                    await context.Channel.SendMessageAsync(embed: embedBuilder.Build());
+                    else WrongCommand(context, prefix);
                 }
-                else
-                {
-                    var embedBuilder = new EmbedBuilder
-                    {
-                        Color = _discordColor.LightBlue,
-                        Author = new EmbedAuthorBuilder
-                        {
-                            Name = "Commands",
-                            IconUrl =
-                                "https://cdn.discordapp.com/avatars/736541614440448020/dd7b0581dcff206877ae4632c911ab05.png?size=1024"
-                        }
-                    };
-
-                    var description =
-                        $"**Use the `{prefix}help [commandname]` command to see more details about that command.**\n\n";
-                    foreach (var command in _service.Commands)
-                    {
-                        var isExecutable = true;
-                        foreach (var precon in command.Preconditions)
-                        {
-                            var result = await precon
-                                .CheckPermissionsAsync(context, command, _services);
-                            if (result.Error.HasValue) isExecutable = false;
-                        }
-
-                        if (isExecutable)
-                        {
-                            description += $"`{command.Name}`, ";
-                        }
-                    }
-
-                    if (description.Length > 0) description = description[..^2];
-                    embedBuilder.WithDescription(description);
-                    await context.Channel.SendMessageAsync(embed: embedBuilder.Build());
-                }
+                else WrongCommand(context, prefix);
             }
 
             #endregion
@@ -145,6 +126,42 @@ namespace KeySeller
                     await context.Channel.SendMessageAsync(result.ErrorReason);
                 }
             }
+        }
+
+        private async void WrongCommand(SocketCommandContext context, char prefix)
+        {
+            var embedBuilder = new EmbedBuilder
+            {
+                Color = _discordColor.LightBlue,
+                Author = new EmbedAuthorBuilder
+                {
+                    Name = "Commands",
+                    IconUrl =
+                        "https://cdn.discordapp.com/avatars/736541614440448020/dd7b0581dcff206877ae4632c911ab05.png?size=1024"
+                }
+            };
+
+            var description =
+                $"**Use the `{prefix}help [commandname]` command to see more details about that command.**\n\n";
+            foreach (var command in _service.Commands)
+            {
+                var isExecutable = true;
+                foreach (var precon in command.Preconditions)
+                {
+                    var result = await precon
+                        .CheckPermissionsAsync(context, command, _services);
+                    if (result.Error.HasValue) isExecutable = false;
+                }
+
+                if (isExecutable)
+                {
+                    description += $"`{command.Name}`, ";
+                }
+            }
+
+            if (description.Length > 0) description = description[..^2];
+            embedBuilder.WithDescription(description);
+            await context.Channel.SendMessageAsync(embed: embedBuilder.Build());
         }
     }
 }

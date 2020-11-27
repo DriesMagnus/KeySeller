@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Discord;
@@ -40,13 +42,12 @@ namespace KeySeller
 
             _client.Log += Log;
 
-            var json = string.Empty;
-
-            await using(var fs = File.OpenRead("config.json"))
-            using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
-                json = await sr.ReadToEndAsync().ConfigureAwait(false);
-
-            var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
+            ConfigJson configJson;
+            using (var r = new StreamReader("config.json"))
+            {
+                var json = await r.ReadToEndAsync();
+                configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
+            }
 
             await _client.LoginAsync(TokenType.Bot, configJson.Token);
             await _client.StartAsync();
@@ -54,10 +55,12 @@ namespace KeySeller
             _handler = new CommandHandler(_client);
 
             while (_client.ConnectionState.ToString() != "Connected") { }
-            await Task.Delay(700);
+            await Task.Delay(650);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Bot connected!");
 
+            // Change custom status message
+            CustomStatus("your life problems.");
             // Checking BTC transaction confirmations
             var confirmTimer = new Timer(ConfirmCheck, null, 0, 1000 * 60 * 5); // Check every 5 minutes
             // Checking order validity
@@ -79,6 +82,12 @@ namespace KeySeller
             return Task.CompletedTask;
         }
 
+        private async void CustomStatus(string status)
+        {
+            await _client.SetGameAsync(status,
+                type: ActivityType.Listening);
+        }
+
         private async void ConfirmCheck(object state)
         {
             var db = new MongoCRUD("GameSelling");
@@ -94,8 +103,9 @@ namespace KeySeller
 
                 if (order.Confirmations >= 3 && !order.Confirmed)
                 {
+                    var customer = _client.GetUser(Convert.ToUInt64(order.Customer.UserId));
                     await _client.GetUser(299582273324449803).SendMessageAsync(
-                        $"**NEW ORDER:**\n**OrderId:** `{order.Id}`\n**Confirmations:** `{order.Confirmations}`");
+                        $"**ORDER CONFIRMED:**\n**Ordered by** `{customer.Username}#{customer.Discriminator}`\n**OrderId:** `{order.Id}`\n**Confirmations:** `{order.Confirmations}`");
                     order.Confirmed = true;
                 }
 
@@ -128,6 +138,13 @@ namespace KeySeller
                     }
                     else
                     {
+                        // Set picked games' Sold property to false again
+                        foreach (var game in order.Games)
+                        {
+                            game.Sold = false;
+                            db.UpsertRecord("Games", game.Id, game);
+                        }
+                        
                         db.DeleteRecord<Order>("Orders", order.Id);
 
                         embedBuilder.Color = _discordColor.Red;
@@ -135,11 +152,11 @@ namespace KeySeller
                             "**Your placed order has been removed because you did not send the BTC in time (used the `confirm` command to add your BTC transaction ID to the order)**.\n\n*Why do we do this?*\n";
                         embedBuilder.Footer = new EmbedFooterBuilder
                         {
-                            Text = "As long as a game is ordered by someone, but not yet paid. This game is not available for purchase for other people.\nAs we want to give everyone the same chance at buying the game they want, we do not support waiting more than 3 days for a sent payment."
+                            Text = "As long as a game is ordered by someone, but not yet paid, this game is not available for purchase for other people.\nAs we want to give everyone the same chance at buying the game they want, we do not support waiting more than 3 days for a sent payment."
                         };
                     }
 
-                    await _client.GetUser(order.Customer.UserId).SendMessageAsync(embed: embedBuilder.Build());
+                    await _client.GetUser(Convert.ToUInt64(order.Customer.UserId)).SendMessageAsync(embed: embedBuilder.Build());
                 }
             }
         }

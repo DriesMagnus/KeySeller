@@ -5,6 +5,10 @@ namespace KeySeller.Business
 {
     public class Customer
     {
-        public ulong UserId { get; set; }
+        /// <summary>
+        /// The Discord UserID of the customer.
+        /// Should be converted to ulong/UInt64.
+        /// </summary>
+        public string UserId { get; set; }
     }
 }

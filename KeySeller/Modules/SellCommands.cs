@@ -1,12 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Data.OleDb;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -14,7 +8,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using KeySeller.Business;
 using KeySeller.StaticVars;
-using _Excel = Microsoft.Office.Interop.Excel;
 using Game = KeySeller.Business.Game;
 
 namespace KeySeller.Modules
@@ -24,26 +17,39 @@ namespace KeySeller.Modules
         private readonly DiscordColor _discordColor = new DiscordColor();
 
         [Command("info")]
-        public async Task Info(int id)
+        [Summary("Gives info about the selected game.")]
+        public async Task Info([Summary("The id of the game.")]int id)
         {
-            var db = new MongoCRUD("GameSelling");
-            var game = db.LoadRecordById<Game>("Games", id);
-
-            if (Context.User is SocketGuildUser user && Context.User.Id != Context.Client.GetApplicationInfoAsync().Result.Owner.Id)
+            try
             {
-                game.Choice = null;
+                var db = new MongoCRUD("GameSelling");
+                var game = db.LoadRecordById<Game>("Games", id);
+
+                if (Context.User.Id != Context.Client.GetApplicationInfoAsync().Result.Owner.Id)
+                {
+                    game.Choice = null;
+                }
+
+                var choiceString = game.Choice == null ? "" : $"**Choice:** {game.Choice}\n";
+                var embedBuilder = new EmbedBuilder
+                    {Title = $"Information of `{game.Name}`", Color = _discordColor.LightBlue};
+                embedBuilder.WithDescription(
+                    $"**Id:** {game.Id}\n**Name:** {game.Name}\n**Price:** €{game.Price}\n**Sold:** {game.Sold}\n{choiceString}**VideoUrl:** {game.VideoUrl}");
+
+                await Context.Channel.SendMessageAsync(embed: embedBuilder.Build());
             }
-
-            var choiceString = game.Choice == null ? "" : $"**Choice:** {game.Choice}\n";
-            var embedBuilder = new EmbedBuilder
-                {Title = $"Information of `{game.Name}`", Color = _discordColor.LightBlue};
-            embedBuilder.WithDescription(
-                $"**Id:** {game.Id}\n**Name:** {game.Name}\n**Price:** €{game.Price}\n**Sold:** {game.Sold}\n{choiceString}**VideoUrl:** {game.VideoUrl}");
-
-            await Context.Channel.SendMessageAsync(embed: embedBuilder.Build());
+            catch (Exception e)
+            {
+                if (e.Message == "Sequence contains no elements")
+                {
+                    await ReplyAsync("That is not a valid game ID.");
+                }
+                else await ReplyAsync("An unknown error occurred. Error message: " + e.Message);
+            }
         }
 
         [Command("list")]
+        [Summary("Shows a list of all games I have for sale or already sold.")]
         public async Task List()
         {
             var db = new MongoCRUD("GameSelling");
@@ -61,7 +67,7 @@ namespace KeySeller.Modules
                     var gameName = game.Name;
                     if (gameName.Contains("(+"))
                     {
-                        gameName = gameName.Replace(gameName.Substring(gameName.IndexOf('(')), "+ DLC");
+                        gameName = gameName.Replace(gameName[gameName.IndexOf('(')..], "+ DLC");
                     }
 
                     var tuple = Tuple.Create($"[{game.Id}]", gameName, "€" + game.Price, soldString);
@@ -97,6 +103,7 @@ namespace KeySeller.Modules
         }
 
         [Command("listselling")]
+        [Summary("Shows a list of all games I am currently selling.")]
         public async Task ListSelling()
         {
             var db = new MongoCRUD("GameSelling");
@@ -113,7 +120,7 @@ namespace KeySeller.Modules
                     var gameName = game.Name;
                     if (gameName.Contains("(+"))
                     {
-                        gameName = gameName.Replace(gameName.Substring(gameName.IndexOf('(')), "+ DLC");
+                        gameName = gameName.Replace(gameName[gameName.IndexOf('(')..], "+ DLC");
                     }
 
                     var tuple = Tuple.Create($"[{game.Id}]", gameName, "€" + game.Price);
@@ -149,6 +156,7 @@ namespace KeySeller.Modules
         }
 
         [Command("listsold")]
+        [Summary("Shows a list of the games I have already sold.")]
         public async Task ListSold()
         {
             var db = new MongoCRUD("GameSelling");
@@ -165,7 +173,7 @@ namespace KeySeller.Modules
                     var gameName = game.Name;
                     if (gameName.Contains("(+"))
                     {
-                        gameName = gameName.Replace(gameName.Substring(gameName.IndexOf('(')), "+ DLC");
+                        gameName = gameName.Replace(gameName[gameName.IndexOf('(')..], "+ DLC");
                     }
 
                     var tuple = Tuple.Create($"[{game.Id}]", gameName, "€" + game.Price);
@@ -201,10 +209,10 @@ namespace KeySeller.Modules
         }
 
         [Command("add")]
-        [Summary("bruh")]
+        [Summary("Add a new game to the database. Use `_` instead of a space for names.")]
         [RequireOwner]
-        public async Task Add(string name, double price, bool sold, string videoUrl, string choiceName = null,
-            int choicesLeft = 0)
+        public async Task Add([Summary("Game name.")]string name, [Summary("Game price.")]double price, [Summary("Is the game sold or not.")]bool sold, [Summary("YouTube video related to game.")]string videoUrl, 
+            [Summary("(Optional) Humble Choice name.")]string choiceName = null, [Summary("(Optional) Amount of choices left.")]int choicesLeft = 0)
         {
             var db = new MongoCRUD("GameSelling");
             var nextId = 1;
@@ -244,9 +252,9 @@ namespace KeySeller.Modules
         }
 
         [Command("upsert", RunMode = RunMode.Async)]
-        [Summary("nigger")]
+        [Summary("Upsert game information.")]
         [RequireOwner]
-        public async Task Upsert([Summary("The id of the game.")] int id)
+        public async Task Upsert([Summary("The id of the game.")]int id)
         {
             var db = new MongoCRUD("GameSelling");
             var game = db.LoadRecordById<Game>("Games", id);
@@ -299,8 +307,9 @@ namespace KeySeller.Modules
         }
 
         [Command("delete")]
+        [Summary("Delete game from database.")]
         [RequireOwner]
-        public async Task Delete(int id)
+        public async Task Delete([Summary("The id of the game.")]int id)
         {
             var db = new MongoCRUD("GameSelling");
             var game = db.LoadRecordById<Game>("Games", id);
@@ -313,6 +322,86 @@ namespace KeySeller.Modules
                 $"**Id:** {game.Id}\n**Name:** {game.Name}\n**Price:** €{game.Price}\n**Sold:** {game.Sold}\n{choiceString}**VideoUrl:** {game.VideoUrl}");
 
             await Context.Channel.SendMessageAsync(embed: embedBuilder.Build());
+        }
+
+        [Command("changechoice", RunMode = RunMode.Async)]
+        [Summary("Reduce amount of choices in a Humble Choice by one.")]
+        [RequireOwner]
+        public async Task ChangeChoice()
+        {
+            try
+            {
+                var db = new MongoCRUD("GameSelling");
+                var games = db.LoadRecords<Game>("Games").Where(x => x.Choice != null).ToList();
+                var choices = games.Select(game => game.Choice).ToList();
+                var nonDupeChoices = choices.Distinct(new ItemEqualityComparer<HumbleChoice>(nameof(HumbleChoice.Name))).ToList();
+                var authorsList = new List<List<Tuple<string, string>>>();
+            
+                if (choices.Count > 0)
+                {
+                    #region PaginatedMessage
+
+                    var authors = new List<Tuple<string, string>>();
+
+                    foreach (var choice in nonDupeChoices.ToList())
+                    {
+                        var tuple = Tuple.Create(choice.Name, choice.ChoicesLeft.ToString());
+                        authors.Add(tuple);
+
+                        if (authors.Count > 9 || choice == nonDupeChoices[^1])
+                        {
+                            authorsList.Add(authors.ToList());
+                            authors.Clear();
+                        }
+                    }
+
+                    var data = authorsList.Select(al => al.ToStringTable(new[] {"Name", "ChoicesLeft"},
+                        a => a.Item1, a => a.Item2)).ToList();
+
+                    var pages = new List<object>();
+                    foreach (var d in data)
+                    {
+                        pages.Add($"```ini\n{d}```");
+                    }
+
+                    var message = new PaginatedMessage
+                    {
+                        Pages = pages,
+                        Options = {JumpDisplayOptions = JumpDisplayOptions.Never, DisplayInformationIcon = false}
+                    };
+                    await PagedReplyAsync(message);
+
+                    #endregion
+
+                    await ReplyAsync("What choice do you want to change (give the name)?");
+                    var confirmation = await NextMessageAsync(timeout: new TimeSpan(0, 5, 0));
+
+                    if (confirmation != null)
+                    {
+                        var toChange = choices.Find(choice => confirmation.Content.ToLower().Contains(choice.Name.ToLower()));
+                        if (toChange != null)
+                        {
+                            toChange.ChoicesLeft--;
+                            foreach (var game in games.Where(x => x.Choice.Name.ToLower() == toChange.Name.ToLower()).ToList())
+                            {
+                                game.Choice = toChange;
+                                db.UpsertRecord("Games", game.Id, game);
+                            }
+
+                            await ReplyAsync(
+                                $"Changed value of `{toChange.Name}` from `{toChange.ChoicesLeft + 1}` to `{toChange.ChoicesLeft}`");
+                        }
+                        else await ReplyAsync("That is not a Humble Choice. Action canceled. Try again using the `changechoice` command.");
+                    }
+                    else await ReplyAsync("You did not reply in time. Action canceled. Try again using the `changechoice` command.");
+                }
+                else await ReplyAsync("There are no Humble Choices in this database!");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("ERROR ChangeChoice: " + DateTime.UtcNow + ": " + e.Message);
+                await ReplyAsync("An unknown error occurred. Error message: " + e.Message);
+            }
         }
     }
 }

@@ -32,7 +32,7 @@ namespace KeySeller.Modules
             try
             {
                 var order = db.LoadRecordById<Order>("Orders", orderId);
-                var customer = Context.Client.GetUser(order.Customer.UserId);
+                var customer = Context.Client.GetUser(Convert.ToUInt64(order.Customer.UserId));
 
                 if (order.TransactionId != null)
                 {
@@ -48,7 +48,7 @@ namespace KeySeller.Modules
                     Title = "Order details",
                     Author = new EmbedAuthorBuilder
                     {
-                        IconUrl = Context.Client.GetUser(order.Customer.UserId).GetAvatarUrl()
+                        IconUrl = Context.Client.GetUser(Convert.ToUInt64(order.Customer.UserId)).GetAvatarUrl()
                     },
                     Color = _discordColor.LightBlue,
                     Description =
@@ -76,7 +76,7 @@ namespace KeySeller.Modules
         {
             var db = new MongoCRUD("GameSelling");
             var orders = db.db.GetCollection<Order>("Orders")
-                .Find(x => x.Customer.UserId == customerId).ToList();
+                .Find(x => x.Customer.UserId == customerId.ToString()).ToList();
             foreach (var order in orders)
             {
                 await Order(order.Id);
@@ -84,23 +84,47 @@ namespace KeySeller.Modules
         }
 
         [Command("myorders")]
-        public async Task MyOrders(params int[] ids)
+        [Summary("Lists all your orders.")]
+        public async Task MyOrders([Summary("(Optional) You can give one or more order IDs to only see those orders! If you do not type any IDs it will show you all your orders.")]params int[] ids)
         {
             if (Context.Channel.GetType() == typeof(SocketDMChannel))
             {
                 var db = new MongoCRUD("GameSelling");
                 var customer = Context.User;
-                var orders = db.db.GetCollection<Order>("Orders")
-                    .Find(x => x.Customer.UserId == customer.Id).ToList();
+                List<Order> orders = new List<Order>();
+                if (ids.Length > 0)
+                {
+                    try
+                    {
+                        orders = ids.Select(id => db.LoadRecordById<Order>("Orders", id))
+                            .Where(x => Convert.ToUInt64(x.Customer.UserId) == customer.Id).ToList();
+                    }
+                    catch (Exception e)
+                    {
+                        if (e.Message == "Sequence contains no elements")
+                        {
+                            await ReplyAsync(
+                                "You do not have any orders with the given order ID. Action canceled. Try again using the `myorders` command.");
+                            return;
+                        }
+                        await ReplyAsync("An error occurred. Error message: " + e.Message);
+                    }
+                }
+                else
+                {
+                    orders = db.db.GetCollection<Order>("Orders")
+                        .Find(x => x.Customer.UserId == customer.Id.ToString()).ToList();
+                }
+
+                if (orders.Count == 0)
+                {
+                    await ReplyAsync(
+                        "You do not have any orders with the given order ID. Action canceled. Try again using the `myorders` command.");
+                    return;
+                }
 
                 if (orders.Count > 0)
                 {
-                    if (ids.Length > 0)
-                    {
-                        orders = ids.Select(id => db.LoadRecordById<Order>("Orders", id))
-                            .Where(x => x.Customer.UserId == customer.Id).ToList();
-                    }
-
                     foreach (var order in orders)
                     {
                         if (order.TransactionId != null)
@@ -117,7 +141,7 @@ namespace KeySeller.Modules
                             Title = "Order details",
                             Author = new EmbedAuthorBuilder
                             {
-                                IconUrl = Context.Client.GetUser(order.Customer.UserId).GetAvatarUrl()
+                                IconUrl = Context.Client.GetUser(Convert.ToUInt64(order.Customer.UserId)).GetAvatarUrl()
                             },
                             Color = _discordColor.LightBlue,
                             Description =
@@ -141,7 +165,9 @@ namespace KeySeller.Modules
         }
 
         [Command("allorders")]
-        public async Task AllOrders()
+        [Summary("Show all orders.")]
+        [RequireOwner]
+        public async Task AllOrders([Summary("Default true. If false, it will only show not handled orders.")]bool showAll = true)
         {
             if (Context.Channel.GetType() == typeof(SocketDMChannel))
             {
@@ -149,15 +175,19 @@ namespace KeySeller.Modules
                 var authorsList = new List<List<Tuple<string, string, ulong>>>();
                 var orders = db.LoadRecords<Order>("Orders");
 
+                if (!showAll)
+                {
+                    orders = db.LoadRecords<Order>("Orders").FindAll(x => !x.Handled);
+                }
+
                 if (orders.Count > 0)
                 {
                     var authors = new List<Tuple<string, string, ulong>>();
 
                     foreach (var order in orders.ToList())
                     {
-                        var customer = Context.Client.GetUser(order.Customer.UserId);
-                        //Console.WriteLine($"{customer.Username}#{customer.Discriminator}");
-                        var tuple = Tuple.Create($"[{order.Id}]", "bruh"/*$"{customer.Username}#{customer.Discriminator}"*/, order.Customer.UserId);
+                        var customer = Context.Client.GetUser(Convert.ToUInt64(order.Customer.UserId));
+                        var tuple = Tuple.Create($"[{order.Id}]", $"{customer.Username}[{customer.Discriminator}]", Convert.ToUInt64(order.Customer.UserId));
                         authors.Add(tuple);
 
                         if (authors.Count > 9 || order == orders[^1])
@@ -192,11 +222,9 @@ namespace KeySeller.Modules
         }
 
         [Command("buy", RunMode = RunMode.Async)]
-        public async Task Buy(params int[] ids)
+        [Summary("Purchase a given game. If you want to order more than one game, type all game IDs f.a.: `buy 1 2` to buy both games with ID 1 and 2.")]
+        public async Task Buy([Summary("Give one or more game IDs.")]params int[] ids)
         {
-            // TODO:
-            // Ask me for confirmation before selling
-            // Set picked games' Sold property to true
             if (Context.Channel.GetType() == typeof(SocketDMChannel))
             {
                 if (ids.Length > 0)
@@ -255,15 +283,22 @@ namespace KeySeller.Modules
 
                                 // Customer
                                 var orders = objDb.db.GetCollection<Order>("Orders")
-                                    .Find(x => x.Customer.UserId == user.Id).ToList();
-                                var customer = orders.Count > 0 ? orders[0].Customer : new Customer {UserId = user.Id};
+                                    .Find(x => x.Customer.UserId == user.Id.ToString()).ToList();
+                                var customer = orders.Count > 0 ? orders[0].Customer : new Customer {UserId = user.Id.ToString()};
 
                                 order.Customer = customer;
                                 objDb.UpsertRecord("Orders", order.Id, order);
 
+                                // Set picked games' Sold property to true
+                                foreach (var game in games)
+                                {
+                                    game.Sold = true;
+                                    db.UpsertRecord("Games", game.Id, game);
+                                }
+                                
                                 #endregion
 
-                                #region DM
+                                #region DMOwner
 
                                 embedBuilder.Title = "Order details";
                                 embedBuilder.Description =
@@ -322,7 +357,8 @@ namespace KeySeller.Modules
         }
 
         [Command("confirm", RunMode = RunMode.Async)]
-        public async Task Confirm(string transactionId)
+        [Summary("Use this command to add your BTC transaction ID to your order.")]
+        public async Task Confirm([Summary("The BTC transactionID (or hash).")]string transactionId)
         {
             if (Context.Channel.GetType() == typeof(SocketDMChannel))
             {
@@ -334,7 +370,7 @@ namespace KeySeller.Modules
                             new uint256(transactionId));
                     var db = new MongoCRUD("GameSelling");
                     var orders = db.db.GetCollection<Order>("Orders")
-                        .Find(x => x.Customer.UserId == Context.User.Id && !x.Handled).ToList();
+                        .Find(x => x.Customer.UserId == Context.User.Id.ToString() && !x.Handled).ToList();
                     Order order = null;
 
                     if (orders.Count > 0)
@@ -378,6 +414,13 @@ namespace KeySeller.Modules
                             {
                                 order.TransactionId = transactionId;
                                 db.UpsertRecord("Orders", order.Id, order);
+
+                                foreach (var game in order.Games)
+                                {
+                                    game.Sold = true;
+                                    db.UpsertRecord("Games", game.Id, game);
+                                }
+
                                 await MyOrders(order.Id);
                                 await ReplyAsync(
                                     "Done! The transaction ID of the order above has been updated.\nYou can always change it again using the `confirm` command.");
@@ -418,69 +461,12 @@ namespace KeySeller.Modules
         }
 
         [Command("cancel", RunMode = RunMode.Async)]
+        [Summary("Cancel an order.")]
         public async Task Cancel()
         {
-            var channel = Context.Channel;
-
-            if (channel.GetType() == typeof(SocketDMChannel))
+            if (Context.Channel.GetType() == typeof(SocketDMChannel))
             {
                 await ForceCancel(Context.User.Id);
-                //try
-                //{
-                //    var db = new MongoCRUD("GameSelling");
-                //    var orders = db.LoadRecords<Order>("Orders").FindAll(x => x.Customer.UserId == Context.User.Id);
-
-                //    Order toCancel;
-                //    if (orders.Count == 1)
-                //    {
-                //        toCancel = orders[0];
-                //    }
-                //    else
-                //    {
-                //        await Orders(Context.User.Id);
-                //        await ReplyAsync("What order do you want to cancel (give the OrderID)?");
-                //        var confirmation = await NextMessageAsync(timeout: new TimeSpan(0, 2, 0));
-
-                //        if (confirmation != null)
-                //        {
-                //            toCancel = orders.Find(x => x.Id == Convert.ToInt32(confirmation.Content));
-                //        }
-                //        else
-                //        {
-                //            await ReplyAsync("You did not reply in time. Action canceled. Try again using the `cancel` command.");
-                //            return;
-                //        }
-                //    }
-
-                //    await Order(toCancel.Id);
-                //    await ReplyAsync("Are you sure you want to cancel the order above? (Type 'yes' or 'no')");
-                //    var confirm = await NextMessageAsync(timeout: new TimeSpan(0, 2, 0));
-                //    if (confirm != null && confirm.Content.ToLower() == "yes")
-                //    {
-                //        db.DeleteRecord<Order>("Orders", toCancel.Id);
-                //        await ReplyAsync($"Purchase order with orderID `{toCancel.Id}` successfully canceled!");
-                //    }
-                //    else
-                //    {
-                //        if (confirm == null)
-                //        {
-                //            await ReplyAsync(
-                //                "You did not reply in time. Action canceled. Try again using the `cancel` command.");
-                //        }
-                //        else await ReplyAsync("Action canceled. Try again using the `cancel` command.");
-                //    }
-                //}
-                //catch (Exception e)
-                //{
-                //    if (e.Message == "Input string was not in a correct format.")
-                //    {
-                //        await ReplyAsync("That is not a number. Cancellation stopped. Try again.");
-                //    }
-                //    else
-                //    {
-                //        await ReplyAsync("An error occurred. Error message: " + e.Message);
-                //    }
-                //}
             }
             else
             {
@@ -489,8 +475,9 @@ namespace KeySeller.Modules
         }
 
         [Command("forcecancel", RunMode = RunMode.Async)]
+        [Summary("Cancel the order of a user.")]
         [RequireOwner]
-        public async Task ForceCancel(ulong userId)
+        public async Task ForceCancel([Summary("The customer's user ID.")]ulong userId)
         {
             var channel = Context.Channel;
 
@@ -499,7 +486,7 @@ namespace KeySeller.Modules
                 try
                 {
                     var db = new MongoCRUD("GameSelling");
-                    var orders = db.LoadRecords<Order>("Orders").FindAll(x => x.Customer.UserId == userId);
+                    var orders = db.LoadRecords<Order>("Orders").FindAll(x => x.Customer.UserId == userId.ToString());
 
                     Order toCancel;
                     if (orders.Count == 1)
@@ -528,6 +515,13 @@ namespace KeySeller.Modules
                     var confirm = await NextMessageAsync(timeout: new TimeSpan(0, 2, 0));
                     if (confirm != null && confirm.Content.ToLower() == "yes")
                     {
+                        // Set picked games' Sold property to false again
+                        foreach (var game in toCancel.Games)
+                        {
+                            game.Sold = false;
+                            db.UpsertRecord("Games", game.Id, game);
+                        }
+
                         db.DeleteRecord<Order>("Orders", toCancel.Id);
                         await ReplyAsync($"Purchase order with orderID `{toCancel.Id}` successfully canceled!");
                     }
@@ -553,10 +547,111 @@ namespace KeySeller.Modules
                     }
                 }
             }
-            else
+            else await ReplyAsync("This command is only usable in the bot's DMs.");
+        }
+
+        [Command("handleorder", RunMode = RunMode.Async)]
+        [Summary("Handle an order.")]
+        [RequireOwner]
+        public async Task HandleOrder([Summary("The customer's user ID.")]ulong userId)
+        {
+            var channel = Context.Channel;
+
+            if (channel.GetType() == typeof(SocketDMChannel))
             {
-                await ReplyAsync("This command is only usable in the bot's DMs.");
+                try
+                {
+                    var db = new MongoCRUD("GameSelling");
+                    var orders = db.LoadRecords<Order>("Orders").FindAll(x => Convert.ToUInt64(x.Customer.UserId) == userId && x.Handled == false);
+
+                    Order toHandle;
+                    if (orders.Count == 1)
+                    {
+                        toHandle = orders[0];
+                    }
+                    else
+                    {
+                        await OrdersOf(userId);
+                        await ReplyAsync("What order do you want to handle (give the OrderID)?");
+                        var confirmation = await NextMessageAsync(timeout: new TimeSpan(0, 2, 0));
+
+                        if (confirmation != null)
+                        {
+                            toHandle = orders.Find(x => x.Id == Convert.ToInt32(confirmation.Content));
+                        }
+                        else
+                        {
+                            await ReplyAsync("You did not reply in time. Action canceled. Try again using the `cancel` command.");
+                            return;
+                        }
+                    }
+
+                    if (toHandle != null && !toHandle.Handled)
+                    {
+                        await Order(toHandle.Id);
+                        await ReplyAsync("Are you sure you want to handle the order above? (Type 'yes' or 'no')");
+                        var confirm = await NextMessageAsync(timeout: new TimeSpan(0, 2, 0));
+                        if (confirm != null && confirm.Content.ToLower() == "yes")
+                        {
+                            // Set picked games' Sold property to true
+                            foreach (var game in toHandle.Games)
+                            {
+                                game.Sold = true;
+                                db.UpsertRecord("Games", game.Id, game);
+                            }
+
+                            toHandle.Handled = true;
+                            db.UpsertRecord("Orders", toHandle.Id, toHandle);
+
+                            #region DMCustomer
+
+                            var embedBuilder = new EmbedBuilder
+                            {
+                                Title = "Order handled",
+                                Author = new EmbedAuthorBuilder
+                                {
+                                    IconUrl = Context.Client.GetUser(userId).GetAvatarUrl()
+                                },
+                                Color = _discordColor.Green,
+                                Description =
+                                    $"**OrderId:** {toHandle.Id}\n**TransactionId:** `{toHandle.TransactionId ?? "null"}`\n**Handled:** {toHandle.Handled}\n**Confirmations:** {toHandle.Confirmations}\n\n**Game(s) ordered:**\n"
+                                    + toHandle.Games.Aggregate("",
+                                        (current, g) =>
+                                            current + $"**Id:** {g.Id}\n**Name:** {g.Name}\n**Price:** €{g.Price}\n\n") +
+                                    $"**Total price:** €{toHandle.Games.Sum(x => x.Price)}"
+                            };
+
+                            await Context.Client.GetUser(userId).SendMessageAsync(text: "**The following order has been handled by the seller, meaning that it has been approved and you will receive your game key shortly!**", embed: embedBuilder.Build());
+                        
+                            #endregion
+
+                            await ReplyAsync($"Purchase order with orderID `{toHandle.Id}` successfully handled!");
+                        }
+                        else
+                        {
+                            if (confirm == null)
+                            {
+                                await ReplyAsync(
+                                    "You did not reply in time. Action canceled. Try again using the `cancel` command.");
+                            }
+                            else await ReplyAsync("Action canceled. Try again using the `cancel` command.");
+                        }
+                    }
+                    else await ReplyAsync("Either no orders have been found or all orders from this customer have been handled.");
+                }
+                catch (Exception e)
+                {
+                    if (e.Message == "Input string was not in a correct format.")
+                    {
+                        await ReplyAsync("That is not a number. Cancellation stopped. Try again.");
+                    }
+                    else
+                    {
+                        await ReplyAsync("An error occurred. Error message: " + e.Message);
+                    }
+                }
             }
+            else await ReplyAsync("This command is only usable in the bot's DMs.");
         }
     }
 }
